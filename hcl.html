@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FridgeMate â€“ Fridge Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f3f6f4; --card:#ffffff; --ink:#15231c; --muted:#5f6f67; --line:#e1e8e4;
+    --brand:#1f6f54; --brand-2:#2c8c6b; --brand-soft:#e3f1ea;
+    --green:#22a35a; --green-soft:#e2f5ea;
+    --orange:#f08a1c; --orange-soft:#fdf0df;
+    --red:#dc3b3b; --red-soft:#fbe4e4;
+    --radius:18px; --shadow:0 1px 2px rgba(20,40,30,.06),0 6px 20px rgba(20,40,30,.06);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:16px}
+  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  .app{max-width:560px;margin:0 auto;padding:0 16px 96px;min-height:100vh}
+  h1,h2,h3{font-family:'Fraunces',Georgia,serif;margin:0;letter-spacing:-.01em}
+  button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  input,select{font:inherit;color:inherit}
+
+  /* top bar */
+  .topbar{display:flex;align-items:center;gap:12px;padding:18px 0 14px;position:sticky;top:0;background:var(--bg);z-index:5}
+  .back{width:40px;height:40px;border-radius:12px;background:var(--card);box-shadow:var(--shadow);display:grid;place-items:center;flex:none}
+  .topbar h2{font-size:22px}
+  .topbar .sub{font-size:13px;color:var(--muted)}
+
+  /* hero */
+  .hero{background:linear-gradient(150deg,var(--brand) 0%,#164f3d 100%);color:#fff;border-radius:24px;padding:22px 20px 20px;margin-top:18px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;right:-40px;top:-40px;width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.07)}
+  .hero .hello{font-size:13px;opacity:.8;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+  .hero h1{font-size:30px;margin-top:4px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px;position:relative;z-index:1}
+  .stat{background:rgba(255,255,255,.12);border-radius:14px;padding:10px 12px}
+  .stat b{display:block;font-size:22px;font-family:'Fraunces',serif}
+  .stat span{font-size:12px;opacity:.85;display:flex;align-items:center;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+  .dot.g{background:var(--green)}.dot.o{background:var(--orange)}.dot.r{background:var(--red)}
+
+  /* home buttons */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .tile{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;text-align:left;display:flex;flex-direction:column;gap:10px;min-height:116px;transition:transform .12s}
+  .tile:active{transform:scale(.97)}
+  .tile .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center}
+  .tile b{font-size:16px}
+  .tile small{color:var(--muted);font-size:12.5px;margin-top:-6px}
+  .tile.primary{background:var(--brand);color:#fff}
+  .tile.primary small{color:rgba(255,255,255,.8)}
+  .tile.primary .ic{background:rgba(255,255,255,.15)}
+  .ic.c1{background:var(--brand-soft);color:var(--brand)}
+  .ic.c2{background:var(--red-soft);color:var(--red)}
+  .ic.c3{background:#e8eefc;color:#3557c4}
+  .badge{display:inline-block;min-width:20px;padding:1px 7px;border-radius:99px;background:var(--red);color:#fff;font-size:12px;font-weight:700;margin-left:6px;vertical-align:2px}
+
+  .section{margin-top:22px}
+  .section-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .section-h h3{font-size:18px}
+  .link{color:var(--brand);font-weight:600;font-size:14px}
+
+  /* legend */
+  .legend{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+  .lg{display:flex;align-items:center;gap:12px;font-size:14.5px}
+  .sw{width:28px;height:28px;border-radius:9px;flex:none}
+  .sw.g{background:var(--green)}.sw.o{background:var(--orange)}.sw.r{background:var(--red)}
+  .lg small{display:block;color:var(--muted);font-size:12.5px}
+
+  /* item cards */
+  .list{display:flex;flex-direction:column;gap:10px}
+  .item{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:13px 14px;display:flex;gap:12px;align-items:center;border-left:6px solid var(--green)}
+  .item.o{border-left-color:var(--orange)}.item.r{border-left-color:var(--red)}
+  .emoji{width:42px;height:42px;border-radius:12px;background:var(--bg);display:grid;place-items:center;font-size:22px;flex:none}
+  .item .meta{flex:1;min-width:0}
+  .item .nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .ln{font-size:12.5px;color:var(--muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:4px 10px}
+  .pill{font-size:12px;font-weight:700;padding:4px 9px;border-radius:99px;white-space:nowrap}
+  .pill.g{background:var(--green-soft);color:#17713f}.pill.o{background:var(--orange-soft);color:#a65800}.pill.r{background:var(--red-soft);color:#b02222}
+  .acts{display:flex;gap:4px;margin-top:8px}
+  .mini{font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:10px;background:var(--bg);color:var(--ink)}
+  .mini.danger{color:var(--red)}
+  .empty{text-align:center;color:var(--muted);padding:28px 16px;background:var(--card);border-radius:var(--radius);border:1.5px dashed var(--line);font-size:14.5px}
+  .empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+
+  /* forms */
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .input{width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);background:#fbfcfb;outline:none;font-size:16px}
+  .input:focus{border-color:var(--brand-2);background:#fff}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .cats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .cat{border:1.5px solid var(--line);border-radius:12px;padding:10px 4px;text-align:center;font-size:12.5px;font-weight:600;background:#fbfcfb}
+  .cat .e{font-size:22px;display:block}
+  .cat .d{font-size:11px;color:var(--muted);font-weight:500}
+  .cat.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
+  .hint{font-size:13px;color:var(--muted);margin-top:6px}
+  .seg{display:flex;flex-wrap:wrap;gap:6px}
+  .seg button{padding:8px 12px;border-radius:99px;border:1.5px solid var(--line);font-size:13.5px;font-weight:600;background:#fbfcfb}
+  .seg button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn{width:100%;padding:15px;border-radius:14px;background:var(--brand);color:#fff;font-weight:700;font-size:16px;box-shadow:0 6px 16px rgba(31,111,84,.25)}
+  .btn:active{transform:scale(.99)}
+  .btn.ghost{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+  .err{color:var(--red);font-size:13px;margin-top:6px;display:none}
+
+  /* tabs / filters */
+  .chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;padding:7px 12px;border-radius:99px;background:var(--card);box-shadow:var(--shadow);font-size:13px;font-weight:600}
+  .chip.on{background:var(--ink);color:#fff}
+  .tabs{display:grid;grid-template-columns:1fr 1fr;background:#e3e9e6;border-radius:12px;padding:4px;margin-bottom:14px}
+  .tabs button{padding:9px;border-radius:9px;font-weight:700;font-size:14px;color:var(--muted)}
+  .tabs button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+  .guide{display:flex;flex-direction:column;gap:8px}
+  .g-row{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;display:flex;align-items:center;gap:12px}
+  .g-row .meta{flex:1}
+  .g-row b{display:block}
+  .g-row small{color:var(--muted);font-size:12.5px}
+  .days{font-family:'Fraunces',serif;font-size:20px;color:var(--brand);text-align:right;line-height:1}
+  .days small{display:block;font-family:'Plus Jakarta Sans';font-size:11px;color:var(--muted)}
+
+  /* shopping */
+  .addbar{display:flex;gap:8px;margin-bottom:14px}
+  .addbar .input{flex:1}
+  .addbar .q{width:76px;flex:none}
+  .plus{width:52px;flex:none;border-radius:12px;background:var(--brand);color:#fff;font-size:26px;font-weight:600}
+  .shop{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;display:flex;align-items:center;gap:12px}
+  .chk{width:26px;height:26px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;flex:none}
+  .shop.done .chk{background:var(--green);border-color:var(--green);color:#fff}
+  .shop.done .nm{text-decoration:line-through;color:var(--muted)}
+  .shop .nm{flex:1;font-weight:600}
+  .shop .qty{font-size:12.5px;color:var(--muted);font-weight:500;margin-left:6px}
+  .x{width:32px;height:32px;border-radius:9px;color:var(--muted);font-size:20px}
+
+  /* alarm + toast */
+  .overlay{position:fixed;inset:0;background:rgba(10,20,15,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .overlay.show{display:flex}
+  .modal{background:var(--card);border-radius:24px;padding:24px 20px;width:100%;max-width:380px;text-align:center}
+  .bell{font-size:46px;animation:ring 1s infinite}
+  @keyframes ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-14deg)}40%{transform:rotate(14deg)}60%{transform:rotate(-8deg)}80%{transform:rotate(8deg)}}
+  .modal h3{font-size:22px;margin:8px 0 6px}
+  .modal p{color:var(--muted);margin:0 0 18px}
+  .modal .btns{display:grid;gap:8px}
+  .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(120px);background:var(--ink);color:#fff;padding:12px 16px;border-radius:14px;font-size:14px;display:flex;gap:14px;align-items:center;transition:transform .25s;z-index:60;max-width:92vw}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast button{color:#8fe0b9;font-weight:700}
+  .sync{font-size:12px;color:var(--muted);text-align:center;margin-top:26px}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HOME -->
+  <section id="v-home">
+    <div class="hero">
+      <div class="hello" id="today"></div>
+      <h1>My Fridge</h1>
+      <div class="stats">
+        <div class="stat"><b id="s-fresh">0</b><span><i class="dot g"></i>Fresh</span></div>
+        <div class="stat"><b id="s-soon">0</b><span><i class="dot o"></i>Soon</span></div>
+        <div class="stat"><b id="s-exp">0</b><span><i class="dot r"></i>Expired</span></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <button class="tile primary" data-go="add">
+        <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+        <b>Add Reminder</b><small>Item, category, date &amp; alarm</small>
+      </button>
+      <button class="tile" data-go="all">
+        <div class="ic c1"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div>
+        <b>All Reminders</b><small>Saved items &amp; categories</small>
+      </button>
+      <button class="tile" data-go="expiry">
+        <div class="ic c2"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg></div>
+        <b>Expiry<span class="badge hidden" id="b-exp"></span></b><small>Expiring soon &amp; expired</small>
+      </button>
+      <button class="tile" data-go="shopping">
+        <div class="ic c3"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.4a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 7H6"/></svg></div>
+        <b>Shopping List<span class="badge hidden" id="b-shop" style="background:#3557c4"></span></b><small>Things to buy</small>
+      </button>
+    </div>
+
+    <div class="section">
+      <div class="section-h"><h3>Legend</h3></div>
+      <div class="legend">
+        <div class="lg"><i class="sw g"></i><div><b>Fresh</b><small>More than 2 days left</small></div></div>
+        <div class="lg"><i class="sw o"></i><div><b>Expires soon</b><small>1â€“2 days left</small></div></div>
+        <div class="lg"><i class="sw r"></i><div><b>Expires today / Expired</b><small>Use it today or throw it out</small></div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-h"><h3>Upcoming reminders</h3><button class="link" data-go="all">See all</button></div>
+      <div class="list" id="home-list"></div>
+    </div>
+    <div class="sync" id="sync"></div>
+  </section>
+
+  <!-- ADD / EDIT -->
+  <section id="v-add" class="hidden">
+    <div class="topbar">
+      <button class="back" data-go="home" aria-label="Back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <div><h2 id="add-title">Add Reminder</h2><div class="sub">Set the expiry date and an alarm</div></div>
+    </div>
+    <form class="card" id="form" autocomplete="off">
+      <div class="field">
+        <label for="f-name">Item name</label>
+        <input class="input" id="f-name" placeholder="e.g. Milk, Paneer, Spinach" maxlength="60">
+        <div class="err" id="e-name">Please enter an item name.</div>
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <div class="cats" id="f-cats"></div>
+        <div class="err" id="e-cat">Please choose a category.</div>
+      </div>
+      <div class="row2 field">
+        <div>
+          <label for="f-date">Expiry date</label>
+          <input class="input" type="date" id="f-date">
+        </div>
+        <div>
+          <label for="f-time">Alarm time</label>
+          <input class="input" type="time" id="f-time" value="09:00">
+        </div>
+      </div>
+      <div class="hint" id="f-hint" style="margin:-8px 0 16px"></div>
+      <div class="field">
+        <label>Alarm</label>
+        <div class="seg" id="f-remind">
+          <button type="button" data-v="0" class="on">On expiry day</button>
+          <button type="button" data-v="1">1 day before</button>
+          <button type="button" data-v="2">2 days before</button>
+          <button type="button" data-v="none">No alarm</button>
+        </div>
+        <div class="hint" id="f-alarm-at"></div>
+      </div>
+      <button class="btn" type="submit" id="f-save">Save Reminder</button>
+    </form>
+  </section>
+
+  <!-- ALL REMINDERS -->
+  <section id="v-all" class="hidden">
+    <div class="topbar">
+      <button class="back" data-go="home" aria-label="Back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <div><h2>All Reminders</h2><div class="sub" id="all-sub"></div></div>
+    </div>
+    <div class="tabs"><button class="on" data-tab="items">Reminders</button><button data-tab="cats">Categories</button></div>
+    <div id="tab-items">
+      <div class="chips" id="all-chips"></div>
+      <div class="list" id="all-list"></div>
+    </div>
+    <div id="tab-cats" class="hidden">
+      <div class="hint" style="margin:0 0 10px">How long food usually stays good in the fridge. Picking a category fills in the expiry date for you.</div>
+      <div class="guide" id="guide"></div>
+    </div>
+  </section>
+
+  <!-- EXPIRY -->
+  <section id="v-expiry" class="hidden">
+    <div class="topbar">
+      <button class="back" data-go="home" aria-label="Back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <div><h2>Expiry</h2><div class="sub">Use these first</div></div>
+    </div>
+    <div class="section-h"><h3 style="color:var(--red)">Expires today / Expired</h3></div>
+    <div class="list" id="exp-red"></div>
+    <div class="section-h" style="margin-top:22px"><h3 style="color:#c76a00">Expires soon</h3></div>
+    <div class="list" id="exp-orange"></div>
+  </section>
+
+  <!-- SHOPPING -->
+  <section id="v-shopping" class="hidden">
+    <div class="topbar">
+      <button class="back" data-go="home" aria-label="Back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <div><h2>Shopping List</h2><div class="sub" id="shop-sub"></div></div>
+    </div>
+    <form class="addbar" id="shop-form" autocomplete="off">
+      <input class="input" id="shop-name" placeholder="Add an item to buy" maxlength="60">
+      <input class="input q" id="shop-qty" placeholder="Qty" maxlength="12">
+      <button class="plus" type="submit" aria-label="Add">+</button>
+    </form>
+    <div class="list" id="shop-list"></div>
+    <button class="btn ghost hidden" id="shop-clear" style="margin-top:14px">Clear bought items</button>
+  </section>
+</div>
+
+<div class="overlay" id="alarm">
+  <div class="modal">
+    <div class="bell">â°</div>
+    <h3 id="al-title"></h3>
+    <p id="al-text"></p>
+    <div class="btns">
+      <button class="btn" id="al-ok">Got it</button>
+      <button class="btn ghost" id="al-snooze">Snooze 1 hour</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"><span id="toast-msg"></span><button id="toast-btn" class="hidden">Undo</button></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Categories & shelf life (days good in the fridge) ---------- */
+const CATS = [
+  {id:"dairy",    name:"Dairy",       e:"ðŸ¥›", days:7,  note:"Milk, curd, paneer, butter"},
+  {id:"eggs",     name:"Eggs",        e:"ðŸ¥š", days:21, note:"Raw eggs in shell"},
+  {id:"meat",     name:"Meat",        e:"ðŸ—", days:2,  note:"Raw chicken, mutton"},
+  {id:"seafood",  name:"Seafood",     e:"ðŸŸ", days:2,  note:"Raw fish, prawns"},
+  {id:"veg",      name:"Vegetables",  e:"ðŸ¥¦", days:7,  note:"Leafy greens 3â€“5 days"},
+  {id:"fruit",    name:"Fruits",      e:"ðŸŽ", days:7,  note:"Berries 3 days, apples longer"},
+  {id:"leftover", name:"Leftovers",   e:"ðŸ²", days:3,  note:"Cooked food, rice, curries"},
+  {id:"bakery",   name:"Bakery",      e:"ðŸž", days:5,  note:"Bread, cakes"},
+  {id:"drinks",   name:"Beverages",   e:"ðŸ§ƒ", days:7,  note:"Opened juice, soft drinks"},
+  {id:"sauce",    name:"Sauces",      e:"ðŸ¥«", days:30, note:"Ketchup, chutney, jam (opened)"},
+  {id:"frozen",   name:"Frozen",      e:"ðŸ§Š", days:90, note:"Freezer items"},
+  {id:"other",    name:"Other",       e:"ðŸ“¦", days:5,  note:"Anything else"}
+];
+const catById = id => CATS.find(c=>c.id===id) || CATS[CATS.length-1];
+
+/* ---------- Helpers ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parseYmd = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+const todayStart = () => { const t=new Date(); t.setHours(0,0,0,0); return t; };
+const daysLeft = r => Math.round((parseYmd(r.date)-todayStart())/86400000);
+const status = r => { const d=daysLeft(r); return d<=0?"r":d<=2?"o":"g"; };
+const fmtDate = s => parseYmd(s).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
+const fmtTime = t => { const [h,m]=t.split(":").map(Number); const d=new Date(); d.setHours(h,m); return d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}); };
+const newId = p => p+"-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function leftLabel(r){
+  const d=daysLeft(r);
+  if(d<0) return "Expired "+(-d)+(d===-1?" day":" days")+" ago";
+  if(d===0) return "Expires today";
+  if(d===1) return "1 day left";
+  return d+" days left";
+}
+function alarmAt(r){
+  if(r.remind==="none") return null;
+  const d=addDays(parseYmd(r.date),-Number(r.remind||0));
+  const [h,m]=(r.time||"09:00").split(":").map(Number); d.setHours(h,m,0,0);
+  if(r.snoozeUntil && r.snoozeUntil>d.getTime()) return new Date(r.snoozeUntil);
+  return d;
+}
+
+/* ---------- Storage: cloud (per-person, private) with on-device fallback ---------- */
+const LS="fridgemate.v1";
+const items = new Map();   // id -> object (type: "r" reminder | "s" shopping)
+let mode="local", col=null;
+const chains = {};
+
+function lsLoad(){ try{ const a=JSON.parse(localStorage.getItem(LS)||"[]"); a.forEach(o=>o&&o.id&&items.set(o.id,o)); }catch(e){} }
+function lsSave(){ try{ localStorage.setItem(LS,JSON.stringify([...items.values()])); }catch(e){} }
+
+function put(obj){
+  items.set(obj.id,obj); lsSave(); render();
+  if(mode==="db"&&col){ const body=JSON.parse(JSON.stringify(obj)); queue(obj.id,()=>col.doc(obj.id).set(body)); }
+}
+function remove(id){
+  items.delete(id); lsSave(); render();
+  if(mode==="db"&&col) queue(id,()=>col.doc(id).delete());
+}
+function queue(id,fn){
+  chains[id]=(chains[id]||Promise.resolve()).then(()=>fn().catch(e=>{
+    if(e&&e.code==="unavailable") return new Promise(r=>setTimeout(r,800+Math.random()*800)).then(fn).catch(()=>{});
+    if(e&&e.code==="quota_exceeded") toast("Storage is full â€“ delete some old items.");
+  }));
+}
+
+async function connect(){
+  setSync("Saved on this device");
+  if(!window.claude||typeof window.claude.use!=="function") return;
+  try{
+    const [db,user]=await Promise.all([window.claude.use("db"),window.claude.use("user")]);
+    if(!db||!user) return;
+    const uid=await user.id();
+    if(!uid) return;
+    col=db.collection("data/users/"+uid);
+    mode="db";
+    setSync("Syncingâ€¦");
+    let first=true;
+    const timer=setTimeout(()=>setSync("Can't reach cloud yet â€“ changes kept on this device"),10000);
+    col.onSnapshot(snap=>{
+      if(snap.metadata.fromCache) return;
+      clearTimeout(timer);
+      const remote=new Map(); snap.docs.forEach(d=>{ const v=d.data(); if(v) remote.set(d.id,Object.assign({},v,{id:d.id})); });
+      if(first){
+        first=false;
+        // upload anything created on this device before sync was ready
+        items.forEach((o,id)=>{ if(!remote.has(id)){ remote.set(id,o); const b=JSON.parse(JSON.stringify(o)); queue(id,()=>col.doc(id).set(b)); } });
+      }
+      items.clear(); remote.forEach((o,id)=>items.set(id,o));
+      lsSave(); render();
+      setSync("âœ“ Synced to your account");
+    },err=>{
+      clearTimeout(timer); mode="local"; setSync("Saved on this device");
+    });
+  }catch(e){ mode="local"; }
+}
+function setSync(t){ $("sync").textContent=t; }
+
+/* ---------- Rendering ---------- */
+const reminders = () => [...items.values()].filter(o=>o.type==="r").sort((a,b)=>a.date.localeCompare(b.date)||(a.time||"").localeCompare(b.time||""));
+const shopping  = () => [...items.values()].filter(o=>o.type==="s").sort((a,b)=>(a.done-b.done)||(b.created-a.created));
+
+function itemCard(r,withActs){
+  const c=catById(r.category), s=status(r), al=alarmAt(r);
+  return `<div class="item ${s}">
+    <div class="emoji">${c.e}</div>
+    <div class="meta">
+      <div class="nm">${esc(r.name)}</div>
+      <div class="ln"><span>${esc(c.name)}</span><span>ðŸ“… ${fmtDate(r.date)}</span>${al?`<span>â° ${fmtTime(r.time)}${r.remind!=="0"?" Â· "+r.remind+"d before":""}</span>`:""}</div>
+      ${withActs?`<div class="acts">
+        <button class="mini" data-act="edit" data-id="${r.id}">Edit</button>
+        <button class="mini" data-act="buy" data-id="${r.id}">+ Shopping</button>
+        <button class="mini danger" data-act="del" data-id="${r.id}">Used / Delete</button>
+      </div>`:""}
+    </div>
+    <span class="pill ${s}">${leftLabel(r)}</span>
+  </div>`;
+}
+const emptyBox=(t,s)=>`<div class="empty"><b>${t}</b>${s}</div>`;
+
+let filter="all";
+function render(){
+  const rs=reminders(), sh=shopping();
+  const cnt={g:0,o:0,r:0}; rs.forEach(r=>cnt[status(r)]++);
+  $("s-fresh").textContent=cnt.g; $("s-soon").textContent=cnt.o; $("s-exp").textContent=cnt.r;
+  const urgent=cnt.r+cnt.o; $("b-exp").textContent=urgent; $("b-exp").classList.toggle("hidden",!urgent);
+  const toBuy=sh.filter(s=>!s.done).length; $("b-shop").textContent=toBuy; $("b-shop").classList.toggle("hidden",!toBuy);
+
+  $("home-list").innerHTML = rs.length? rs.slice(0,5).map(r=>itemCard(r,false)).join("")
+    : emptyBox("No reminders yet","Tap <b style='display:inline'>Add Reminder</b> to track your first item.");
+
+  // all
+  const used=new Set(rs.map(r=>r.category));
+  $("all-chips").innerHTML=[`<button class="chip ${filter==="all"?"on":""}" data-f="all">All (${rs.length})</button>`]
+    .concat(CATS.filter(c=>used.has(c.id)).map(c=>`<button class="chip ${filter===c.id?"on":""}" data-f="${c.id}">${c.e} ${c.name}</button>`)).join("");
+  if(filter!=="all"&&!used.has(filter)) filter="all";
+  const fl=rs.filter(r=>filter==="all"||r.category===filter);
+  $("all-list").innerHTML= fl.length? fl.map(r=>itemCard(r,true)).join("") : emptyBox("Nothing saved","Your saved reminders will appear here.");
+  $("all-sub").textContent=rs.length+" item"+(rs.length===1?"":"s")+" in your fridge";
+
+  // expiry
+  const red=rs.filter(r=>status(r)==="r"), org=rs.filter(r=>status(r)==="o");
+  $("exp-red").innerHTML= red.length? red.map(r=>itemCard(r,true)).join("") : emptyBox("All clear ðŸŽ‰","Nothing expires today.");
+  $("exp-orange").innerHTML= org.length? org.map(r=>itemCard(r,true)).join("") : emptyBox("Nothing urgent","No items expiring in the next 2 days.");
+
+  // shopping
+  $("shop-list").innerHTML= sh.length? sh.map(s=>`<div class="shop ${s.done?"done":""}">
+      <button class="chk" data-act="tick" data-id="${s.id}" aria-label="Mark bought">${s.done?"âœ“":""}</button>
+      <div class="nm">${esc(s.name)}${s.qty?`<span class="qty">Ã— ${esc(s.qty)}</span>`:""}</div>
+      <button class="x" data-act="sdel" data-id="${s.id}" aria-label="Remove">Ã—</button>
+    </div>`).join("") : emptyBox("Your list is empty","Add things you need to buy.");
+  $("shop-sub").textContent= toBuy+" to buy"+(sh.length-toBuy?" Â· "+(sh.length-toBuy)+" bought":"");
+  $("shop-clear").classList.toggle("hidden",!sh.some(s=>s.done));
+}
+
+$("guide").innerHTML=CATS.map(c=>`<div class="g-row"><div class="emoji">${c.e}</div><div class="meta"><b>${c.name}</b><small>${c.note}</small></div><div class="days">${c.days}<small>${c.days===1?"day":"days"}</small></div></div>`).join("");
+$("today").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"});
+
+/* ---------- Navigation (hash routes) ---------- */
+const VIEWS=["home","add","all","expiry","shopping"];
+function show(v){
+  if(!VIEWS.includes(v)) v="home";
+  VIEWS.forEach(x=>$("v-"+x).classList.toggle("hidden",x!==v));
+  if(v==="add" && !editing) resetForm();
+  window.scrollTo(0,0);
+}
+function go(v){ if(v!=="add") editing=null; if(location.hash==="#"+v) show(v); else location.hash=v; }
+window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+document.addEventListener("click",e=>{
+  const g=e.target.closest("[data-go]"); if(g){ if(g.dataset.go==="add") editing=null; go(g.dataset.go); }
+  unlockAudio();
+});
+
+/* ---------- Add / edit form ---------- */
+let editing=null, selCat=null, remind="0", dateTouched=false;
+$("f-cats").innerHTML=CATS.map(c=>`<button type="button" class="cat" data-cat="${c.id}"><span class="e">${c.e}</span>${c.name}<span class="d">${c.days} days</span></button>`).join("");
+function setCat(id,auto){
+  selCat=id;
+  document.querySelectorAll(".cat").forEach(b=>b.classList.toggle("on",b.dataset.cat===id));
+  const c=catById(id);
+  if(auto && !dateTouched) $("f-date").value=ymd(addDays(todayStart(),c.days));
+  $("f-hint").textContent=`${c.e} ${c.name} usually stays good for about ${c.days} days.`;
+  $("e-cat").style.display="none"; updAlarmHint();
+}
+function setRemind(v){ remind=v; document.querySelectorAll("#f-remind button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); updAlarmHint(); }
+function updAlarmHint(){
+  const d=$("f-date").value, t=$("f-time").value||"09:00";
+  if(!d){ $("f-alarm-at").textContent=""; return; }
+  const a=alarmAt({date:d,time:t,remind});
+  $("f-alarm-at").textContent= a? "Alarm will ring on "+a.toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"})+" at "+fmtTime(t) : "No alarm will be set.";
+}
+function resetForm(){
+  $("form").reset(); $("f-time").value="09:00"; selCat=null; dateTouched=false;
+  document.querySelectorAll(".cat").forEach(b=>b.classList.remove("on"));
+  $("f-date").value=ymd(addDays(todayStart(),5)); $("f-hint").textContent="Pick a category to fill in the expiry date automatically.";
+  setRemind("0"); $("add-title").textContent="Add Reminder"; $("f-save").textContent="Save Reminder";
+  ["e-name","e-cat"].forEach(i=>$(i).style.display="none");
+}
+$("f-cats").addEventListener("click",e=>{ const b=e.target.closest(".cat"); if(b) setCat(b.dataset.cat,true); });
+$("f-remind").addEventListener("click",e=>{ const b=e.target.closest("button"); if(b) setRemind(b.dataset.v); });
+$("f-date").addEventListener("input",()=>{ dateTouched=true; updAlarmHint(); });
+$("f-time").addEventListener("input",updAlarmHint);
+$("form").addEventListener("submit",e=>{
+  e.preventDefault();
+  const name=$("f-name").value.trim();
+  let ok=true;
+  if(!name){ $("e-name").style.display="block"; ok=false; }
+  if(!selCat){ $("e-cat").style.display="block"; ok=false; }
+  if(!ok) return;
+  const base= editing? items.get(editing) : null;
+  const r=Object.assign({},base||{},{
+    id: base?base.id:newId("r"), type:"r", name, category:selCat,
+    date:$("f-date").value||ymd(todayStart()), time:$("f-time").value||"09:00",
+    remind, notified:false, snoozeUntil:null, created: base?base.created:Date.now()
+  });
+  put(r);
+  askNotify();
+  toast(editing?"Reminder updated":"Reminder saved");
+  editing=null; go("home");
+});
+$("f-name").addEventListener("input",()=>$("e-name").style.display="none");
+
+/* ---------- List actions ---------- */
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]"); if(!b) return;
+  const id=b.dataset.id, o=items.get(id); if(!o) return;
+  const a=b.dataset.act;
+  if(a==="edit"){
+    editing=id; resetForm(); editing=id;
+    $("f-name").value=o.name; dateTouched=true; setCat(o.category,false);
+    $("f-date").value=o.date; $("f-time").value=o.time||"09:00"; setRemind(o.remind||"0");
+    $("add-title").textContent="Edit Reminder"; $("f-save").textContent="Save Changes";
+    if(location.hash==="#add") show("add"); else location.hash="add";
+  }
+  if(a==="del"){ remove(id); toast(`"${o.name}" removed`,()=>put(o)); }
+  if(a==="buy"){ put({id:newId("s"),type:"s",name:o.name,qty:"",done:false,created:Date.now()}); toast(`"${o.name}" added to shopping list`); }
+  if(a==="tick"){ put(Object.assign({},o,{done:!o.done})); }
+  if(a==="sdel"){ remove(id); toast(`"${o.name}" removed`,()=>put(o)); }
+});
+$("all-chips").addEventListener("click",e=>{ const c=e.target.closest("[data-f]"); if(c){ filter=c.dataset.f; render(); } });
+document.querySelectorAll("[data-tab]").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("on",x===t));
+  $("tab-items").classList.toggle("hidden",t.dataset.tab!=="items");
+  $("tab-cats").classList.toggle("hidden",t.dataset.tab!=="cats");
+}));
+
+/* ---------- Shopping ---------- */
+$("shop-form").addEventListener("submit",e=>{
+  e.preventDefault();
+  const name=$("shop-name").value.trim(); if(!name) return;
+  put({id:newId("s"),type:"s",name,qty:$("shop-qty").value.trim(),done:false,created:Date.now()});
+  $("shop-name").value=""; $("shop-qty").value=""; $("shop-name").focus();
+});
+$("shop-clear").addEventListener("click",()=>{
+  const done=shopping().filter(s=>s.done); done.forEach(s=>remove(s.id));
+  toast(done.length+" bought item"+(done.length===1?"":"s")+" cleared",()=>done.forEach(put));
+});
+
+/* ---------- Toast ---------- */
+let tt;
+function toast(msg,undo){
+  $("toast-msg").textContent=msg;
+  const b=$("toast-btn"); b.classList.toggle("hidden",!undo);
+  b.onclick=()=>{ undo&&undo(); $("toast").classList.remove("show"); };
+  $("toast").classList.add("show"); clearTimeout(tt); tt=setTimeout(()=>$("toast").classList.remove("show"),3800);
+}
+
+/* ---------- Alarms ---------- */
+let actx=null, beepTimer=null, current=null;
+function unlockAudio(){ try{ if(!actx){ const A=window.AudioContext||window.webkitAudioContext; if(A) actx=new A(); } if(actx&&actx.state==="suspended") actx.resume(); }catch(e){} }
+function beep(){
+  if(!actx) return;
+  try{
+    const t=actx.currentTime;
+    [0,0.25,0.5].forEach(off=>{ const o=actx.createOscillator(), g=actx.createGain();
+      o.type="sine"; o.frequency.value=880; g.gain.setValueAtTime(0.0001,t+off); g.gain.exponentialRampToValueAtTime(0.3,t+off+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+off+0.2);
+      o.connect(g).connect(actx.destination); o.start(t+off); o.stop(t+off+0.22); });
+  }catch(e){}
+}
+function askNotify(){ try{ if("Notification" in window && Notification.permission==="default") Notification.requestPermission().catch(()=>{}); }catch(e){} }
+function ring(r){
+  current=r;
+  const c=catById(r.category);
+  $("al-title").textContent=c.e+" "+r.name;
+  $("al-text").textContent=leftLabel(r)+" Â· "+fmtDate(r.date);
+  $("alarm").classList.add("show");
+  beep(); clearInterval(beepTimer); beepTimer=setInterval(beep,2000);
+  try{ if("Notification" in window && Notification.permission==="granted") new Notification("FridgeMate: "+r.name,{body:leftLabel(r)}); }catch(e){}
+  try{ navigator.vibrate&&navigator.vibrate([300,150,300]); }catch(e){}
+}
+function stopRing(){ $("alarm").classList.remove("show"); clearInterval(beepTimer); current=null; }
+$("al-ok").addEventListener("click",()=>{ if(current){ const o=items.get(current.id); if(o) put(Object.assign({},o,{notified:true,snoozeUntil:null})); } stopRing(); });
+$("al-snooze").addEventListener("click",()=>{ if(current){ const o=items.get(current.id); if(o) put(Object.assign({},o,{notified:false,snoozeUntil:Date.now()+3600000})); } stopRing(); });
+function checkAlarms(){
+  if(current) return;
+  const now=Date.now();
+  const due=reminders().find(r=>{ if(r.notified) return false; const a=alarmAt(r); return a && a.getTime()<=now; });
+  if(due) ring(due);
+}
+
+/* ---------- Start ---------- */
+lsLoad(); render();
+show(location.hash.slice(1)||"home");
+connect();
+setInterval(()=>{ checkAlarms(); }, 15000);
+setTimeout(checkAlarms,1500);
+// refresh colours when the day changes
+let lastDay=ymd(new Date()); setInterval(()=>{ const d=ymd(new Date()); if(d!==lastDay){ lastDay=d; render(); } },60000);
+})();
+</script>
+</body>
+</html>
